@@ -94,6 +94,10 @@ dt{color:var(--sec-muted)}dd{margin:0;text-align:right;overflow-wrap:anywhere}
 .btn{font:inherit;font-weight:700;font-size:1rem;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:14px 16px;cursor:pointer;box-shadow:0 6px 18px -8px var(--accent)}
 .btn:hover{filter:brightness(1.08)}
 .btn:disabled{opacity:.6;cursor:wait}
+.btn2{font:inherit;font-weight:600;font-size:.95rem;background:transparent;color:var(--sec-ink);border:1.5px solid var(--sec-ink);border-radius:10px;padding:12px 16px;cursor:pointer}
+.btn2:hover{background:var(--sec-2)}
+.btn2:disabled{opacity:.6;cursor:wait}
+.ghost{margin-top:2px}
 .ghost{font:inherit;font-size:.88rem;background:transparent;color:var(--sec-ink);border:1px solid var(--sec-2);border-radius:10px;padding:10px;cursor:pointer}
 .ghost:hover{background:var(--sec-2)}
 .msg{font-size:.88rem;min-height:1.3em;margin:0;color:var(--sec-muted)}
@@ -192,6 +196,7 @@ dt{color:var(--sec-muted)}dd{margin:0;text-align:right;overflow-wrap:anywhere}
         <dt>Data</dt><dd id="tData">—</dd>
       </dl>
       <button class="btn" id="gerar" type="button">Gerar PDF do recibo</button>
+      <button class="btn2" id="imprimir" type="button">Imprimir recibo</button>
       <p class="msg" id="msg"></p>
       <button class="ghost" id="limpar" type="button">Novo recibo</button>
       <div class="confirm" id="confirm" hidden>
@@ -418,6 +423,24 @@ $('gerar').addEventListener('click',async()=>{
     else if(c==='rate_limited') msg('Já existe um download aguardando confirmação.','err');
     else msg('Não foi possível salvar o PDF agora. Tente de novo.','err');
   }finally{ btn.disabled=false; }
+});
+
+const emClaude = !!(window.claude && window.claude.use);
+if(emClaude) $('imprimir').hidden = true; // a página do Claude não permite abrir a impressão
+$('imprimir').addEventListener('click',()=>{
+  const s=state(); const erros=validar(s);
+  if(erros.length){ msg('Falta preencher: '+erros.join(', ')+'.','err'); return; }
+  if(!window.jspdf){ msg('O gerador de PDF não carregou. Verifique a internet e recarregue a página.','err'); return; }
+  try{
+    const doc=montarPDF(s); doc.autoPrint();
+    const url=URL.createObjectURL(doc.output('blob'));
+    let fr=document.getElementById('printFrame'); if(fr) fr.remove();
+    fr=document.createElement('iframe'); fr.id='printFrame';
+    fr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    fr.src=url; document.body.appendChild(fr);
+    fr.onload=()=>{ try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(e){ window.open(url,'_blank'); } };
+    msg('Abrindo a impressão…','ok');
+  }catch(e){ msg('Não foi possível abrir a impressão. Use "Gerar PDF" e imprima o arquivo.','err'); }
 });
 
 $('limpar').addEventListener('click',()=>{ $('confirm').hidden=false; $('limpar').hidden=true; });
