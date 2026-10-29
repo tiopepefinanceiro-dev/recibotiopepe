@@ -53,6 +53,9 @@ form{display:grid;gap:16px;min-width:0}
 fieldset{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:18px 18px 20px;margin:0;display:grid;gap:14px;min-width:0}
 legend{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sec-ink);background:var(--sec);border-radius:6px;padding:3px 10px}
 .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;align-items:start}
+.row.p3{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr)}
+@media (max-width:700px){.row.p3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.row.p3>:first-child{grid-column:1/-1}}
+@media (max-width:420px){.row.p3{grid-template-columns:minmax(0,1fr)}}
 label{display:grid;gap:6px;align-content:start;font-weight:600;font-size:.88rem}
 label small{font-weight:400;font-size:.78rem;line-height:1.35;color:var(--muted)}
 input,textarea,select{font:inherit;color:var(--fg);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;min-width:0;transition:border-color .15s,box-shadow .15s}
@@ -127,7 +130,7 @@ dt{color:var(--sec-muted)}dd{margin:0;text-align:right;overflow-wrap:anywhere}
     <form id="f" novalidate>
       <fieldset>
         <legend>Prestador do serviço</legend>
-        <div class="row">
+        <div class="row p3">
           <label for="nome">Nome completo
             <input id="nome" list="prestadores" autocomplete="off" placeholder="Ex.: João Pedro Albuquerque" required>
             <datalist id="prestadores"></datalist>
@@ -135,7 +138,10 @@ dt{color:var(--sec-muted)}dd{margin:0;text-align:right;overflow-wrap:anywhere}
           </label>
           <label for="cpf">CPF
             <input id="cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" required>
-            <small>Preenchido sozinho para prestadores salvos.</small>
+            <small>Preenchido sozinho se já salvo.</small>
+          </label>
+          <label for="tel">Telefone <small>(opcional)</small>
+            <input id="tel" type="tel" inputmode="tel" autocomplete="off" placeholder="(81) 99999-9999" maxlength="15">
           </label>
         </div>
         <div class="fixed">
@@ -290,7 +296,7 @@ function getItems(){ return [...items.children].map(d=>({dt:d.querySelector('.dt
 function pg(){ return document.querySelector('input[name=pg]:checked').value; }
 function state(){
   const it=getItems();
-  return { nome:$('nome').value.trim(), cpf:$('cpf').value, desc:$('desc').value.trim(), it,
+  return { nome:$('nome').value.trim(), cpf:$('cpf').value, tel:$('tel').value.trim(), desc:$('desc').value.trim(), it,
     total:it.reduce((a,b)=>a+b.v,0), pg:pg(), outra:$('outra').value.trim(), data:$('dataRec').value, resp:$('resp').value.trim() };
 }
 function update(){
@@ -305,6 +311,12 @@ function update(){
   try{ localStorage.setItem('recibo-rascunho',JSON.stringify({...s,it:[...items.children].map(d=>({dt:d.querySelector('.dt').value,sv:d.querySelector('.sv').value,vl:d.querySelector('.vl').value}))})); }catch(e){}
 }
 
+const mascTel=v=>{ const d=v.replace(/\D/g,'').slice(0,11);
+  if(d.length<=2) return d.length?'('+d:'';
+  if(d.length<=6) return `(${d.slice(0,2)}) ${d.slice(2)}`;
+  if(d.length<=10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+  return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`; };
+$('tel').addEventListener('input',e=>{ e.target.value=mascTel(e.target.value); e.target.removeAttribute('aria-invalid'); update(); });
 $('cpf').addEventListener('input',e=>{
   let d=e.target.value.replace(/\D/g,'').slice(0,11);
   e.target.value=d.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1-$2');
@@ -339,6 +351,7 @@ function montarPDF(s){
   campo('CNPJ informado:','12.045.985/0001-50');
   campo('PRESTADOR DO SERVIÇO:',s.nome.toUpperCase());
   campo('CPF:',s.cpf);
+  if(s.tel) campo('Telefone:',s.tel);
   campo('Endereço:','R. Alm. Tamandaré, 170 - Boa Viagem, Recife - PE, 51030-090');
 
   const secao=t=>{ y+=5; doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text(t,L,y); y+=6.5; doc.setFont('helvetica','normal'); };
@@ -404,6 +417,7 @@ function validar(s){
   const erros=[];
   if(!s.nome){ erros.push('o nome do prestador'); $('nome').setAttribute('aria-invalid','true'); }
   if(!cpfValido(s.cpf)){ erros.push('um CPF válido'); $('cpf').setAttribute('aria-invalid','true'); }
+  if(s.tel && s.tel.replace(/\D/g,'').length<10){ erros.push('um telefone completo com DDD'); $('tel').setAttribute('aria-invalid','true'); }
   if(!(s.total>0)) erros.push('o valor de pelo menos um dia');
   if(s.pg==='Outra' && !s.outra) erros.push('qual é a outra forma de pagamento');
   if(!s.resp){ erros.push('o responsável pelo pagamento'); $('resp').setAttribute('aria-invalid','true'); }
@@ -424,13 +438,13 @@ function listasNomes(){
 }
 function salvarNomes(s){
   const up=(k,item)=>{ const arr=ler(k).filter(p=>norm(p.nome)!==norm(item.nome)); arr.unshift(item); gravar(k,arr.slice(0,200)); };
-  up(KEY_P,{nome:s.nome,cpf:s.cpf,usado:Date.now()});
+  up(KEY_P,{nome:s.nome,cpf:s.cpf,tel:s.tel,usado:Date.now()});
   up(KEY_R,{nome:s.resp,usado:Date.now()});
   listasNomes();
 }
 $('nome').addEventListener('change',()=>{
   const p=ler(KEY_P).find(x=>norm(x.nome)===norm($('nome').value));
-  if(p){ $('nome').value=p.nome; if(p.cpf){ $('cpf').value=p.cpf; $('cpf').removeAttribute('aria-invalid'); } update(); }
+  if(p){ $('nome').value=p.nome; if(p.cpf){ $('cpf').value=p.cpf; $('cpf').removeAttribute('aria-invalid'); } if(p.tel) $('tel').value=p.tel; update(); }
 });
 
 let downloadsP = window.claude && window.claude.use ? window.claude.use('downloads') : Promise.resolve(undefined);
@@ -490,7 +504,7 @@ $('imprimir').addEventListener('click',async()=>{
 $('limpar').addEventListener('click',()=>{ $('confirm').hidden=false; $('limpar').hidden=true; });
 $('cNo').addEventListener('click',()=>{ $('confirm').hidden=true; $('limpar').hidden=false; });
 $('cYes').addEventListener('click',()=>{
-  ['nome','cpf','desc','outra','resp'].forEach(id=>{$(id).value='';$(id).removeAttribute('aria-invalid');});
+  ['nome','cpf','tel','desc','outra','resp'].forEach(id=>{$(id).value='';$(id).removeAttribute('aria-invalid');});
   document.querySelector('input[name=pg][value=Pix]').checked=true;
   $('dataRec').value=hoje(); items.innerHTML=''; addItem();
   $('confirm').hidden=true; $('limpar').hidden=false; msg(''); $('nome').focus();
@@ -501,7 +515,7 @@ $('cYes').addEventListener('click',()=>{
   let r=null; try{ r=JSON.parse(localStorage.getItem('recibo-rascunho')||'null'); }catch(e){}
   $('dataRec').value=hoje();
   if(r && r.it && r.it.length){
-    $('nome').value=r.nome||''; $('cpf').value=r.cpf||''; $('desc').value=r.desc||'';
+    $('nome').value=r.nome||''; $('cpf').value=r.cpf||''; $('tel').value=r.tel||''; $('desc').value=r.desc||'';
     $('outra').value=r.outra||''; $('resp').value=r.resp||''; if(r.data) $('dataRec').value=r.data;
     const p=document.querySelector(`input[name=pg][value="${r.pg}"]`); if(p) p.checked=true;
     r.it.forEach(i=>addItem(i));
