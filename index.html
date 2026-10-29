@@ -129,6 +129,14 @@ dt{color:var(--sec-muted)}dd{margin:0;text-align:right;overflow-wrap:anywhere}
   <div class="grid">
     <form id="f" novalidate>
       <fieldset>
+        <legend>Contratante</legend>
+        <div class="fixed">
+          <div><b>Contratante:</b> Garrido Restaurante Ltda. – Restaurante Tio Pepe · CNPJ 12.045.985/0001-50</div>
+          <div><b>Endereço:</b> R. Alm. Tamandaré, 170 - Boa Viagem, Recife - PE, 51030-090</div>
+        </div>
+      </fieldset>
+
+      <fieldset>
         <legend>Prestador do serviço</legend>
         <div class="row p3">
           <label for="nome">Nome completo
@@ -143,10 +151,6 @@ dt{color:var(--sec-muted)}dd{margin:0;text-align:right;overflow-wrap:anywhere}
           <label for="tel">Telefone <small>(opcional)</small>
             <input id="tel" type="tel" inputmode="tel" autocomplete="off" placeholder="(81) 99999-9999" maxlength="15">
           </label>
-        </div>
-        <div class="fixed">
-          <div><b>Contratante:</b> Garrido Restaurante Ltda. – Restaurante Tio Pepe · CNPJ 12.045.985/0001-50</div>
-          <div><b>Endereço:</b> R. Alm. Tamandaré, 170 - Boa Viagem, Recife - PE, 51030-090</div>
         </div>
       </fieldset>
 
@@ -349,10 +353,10 @@ function montarPDF(s){
   const campo=(lbl,val)=>{ doc.setFont('helvetica','bold'); doc.text(lbl,L,y); const w=doc.getTextWidth(lbl)+1.8; doc.setFont('helvetica','normal'); doc.text(val,L+w,y); y+=6.5; };
   campo('CONTRATANTE:','Garrido Restaurante Ltda. – Restaurante Tio Pepe');
   campo('CNPJ informado:','12.045.985/0001-50');
+  campo('Endereço:','R. Alm. Tamandaré, 170 - Boa Viagem, Recife - PE, 51030-090');
   campo('PRESTADOR DO SERVIÇO:',s.nome.toUpperCase());
   campo('CPF:',s.cpf);
   if(s.tel) campo('Telefone:',s.tel);
-  campo('Endereço:','R. Alm. Tamandaré, 170 - Boa Viagem, Recife - PE, 51030-090');
 
   const secao=t=>{ y+=5; doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text(t,L,y); y+=6.5; doc.setFont('helvetica','normal'); };
   secao('1. DESCRIÇÃO DOS SERVIÇOS');
