@@ -123,7 +123,9 @@ dt{color:var(--sec-muted)}dd{margin:0;text-align:right;overflow-wrap:anywhere}
         <legend>Prestador do serviço</legend>
         <div class="row">
           <label for="nome">Nome completo
-            <input id="nome" autocomplete="off" placeholder="Ex.: João Pedro Albuquerque" required>
+            <input id="nome" list="prestadores" autocomplete="off" placeholder="Ex.: João Pedro Albuquerque" required>
+            <datalist id="prestadores"></datalist>
+            <small id="nomeHint">Os prestadores já usados aparecem como sugestão ao digitar.</small>
           </label>
           <label for="cpf">CPF
             <input id="cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14" required>
@@ -177,7 +179,8 @@ dt{color:var(--sec-muted)}dd{margin:0;text-align:right;overflow-wrap:anywhere}
             <input id="dataRec" type="date">
           </label>
           <label for="resp">Responsável pelo pagamento
-            <input id="resp" placeholder="Nome de quem pagou" required>
+            <input id="resp" list="responsaveis" autocomplete="off" placeholder="Nome de quem pagou" required>
+            <datalist id="responsaveis"></datalist>
           </label>
         </div>
       </fieldset>
@@ -402,11 +405,33 @@ function validar(s){
 $('nome').addEventListener('input',e=>e.target.removeAttribute('aria-invalid'));
 $('resp').addEventListener('input',e=>e.target.removeAttribute('aria-invalid'));
 
+/* ---------- nomes salvos no navegador ---------- */
+const KEY_P='recibo-prestadores', KEY_R='recibo-responsaveis';
+const ler=k=>{ try{ return JSON.parse(localStorage.getItem(k)||'[]')||[]; }catch(e){ return []; } };
+const gravar=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} };
+const norm=t=>t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+function listasNomes(){
+  const fill=(id,arr)=>{ const dl=$(id); dl.innerHTML=''; arr.forEach(p=>{ const o=document.createElement('option'); o.value=p.nome; if(p.cpf) o.label=p.cpf; dl.appendChild(o); }); };
+  const ps=ler(KEY_P); fill('prestadores',ps); fill('responsaveis',ler(KEY_R));
+  $('nomeHint').textContent = ps.length ? `${ps.length} prestador${ps.length>1?'es':''} salvo${ps.length>1?'s':''} neste navegador. Comece a digitar para escolher.` : 'Os prestadores já usados aparecem como sugestão ao digitar.';
+}
+function salvarNomes(s){
+  const up=(k,item)=>{ const arr=ler(k).filter(p=>norm(p.nome)!==norm(item.nome)); arr.unshift(item); gravar(k,arr.slice(0,200)); };
+  up(KEY_P,{nome:s.nome,cpf:s.cpf,usado:Date.now()});
+  up(KEY_R,{nome:s.resp,usado:Date.now()});
+  listasNomes();
+}
+$('nome').addEventListener('change',()=>{
+  const p=ler(KEY_P).find(x=>norm(x.nome)===norm($('nome').value));
+  if(p){ $('nome').value=p.nome; if(p.cpf){ $('cpf').value=p.cpf; $('cpf').removeAttribute('aria-invalid'); } update(); }
+});
+
 let downloadsP = window.claude && window.claude.use ? window.claude.use('downloads') : Promise.resolve(undefined);
 $('gerar').addEventListener('click',async()=>{
   const s=state(); const erros=validar(s);
   if(erros.length){ msg('Falta preencher: '+erros.join(', ')+'.','err'); return; }
   if(!window.jspdf){ msg('O gerador de PDF não carregou. Verifique a internet e recarregue a página.','err'); return; }
+  salvarNomes(s);
   const btn=$('gerar'); btn.disabled=true; msg('Gerando PDF…');
   try{
     const doc=montarPDF(s);
@@ -431,6 +456,7 @@ const emClaude = !!(window.claude && window.claude.use);
 $('imprimir').addEventListener('click',async()=>{
   const s=state(); const erros=validar(s);
   if(erros.length){ msg('Falta preencher: '+erros.join(', ')+'.','err'); return; }
+  salvarNomes(s);
   if(emClaude){ // dentro do Claude a janela de impressão é bloqueada: salva o PDF para imprimir
     const dl=await downloadsP;
     if(!dl){ msg('Para imprimir, use o site do recibo no GitHub.','err'); return; }
@@ -473,6 +499,7 @@ $('cYes').addEventListener('click',()=>{
     const p=document.querySelector(`input[name=pg][value="${r.pg}"]`); if(p) p.checked=true;
     r.it.forEach(i=>addItem(i));
   } else addItem();
+  listasNomes();
   update();
 })();
 </script>
