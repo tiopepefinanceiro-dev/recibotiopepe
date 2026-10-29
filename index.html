@@ -176,8 +176,8 @@ dt{color:var(--sec-muted)}dd{margin:0;text-align:right;overflow-wrap:anywhere}
           <label for="dataRec">Data do recibo
             <input id="dataRec" type="date">
           </label>
-          <label for="resp">Responsável pelo pagamento <small>(opcional)</small>
-            <input id="resp" placeholder="Nome de quem pagou">
+          <label for="resp">Responsável pelo pagamento
+            <input id="resp" placeholder="Nome de quem pagou" required>
           </label>
         </div>
       </fieldset>
@@ -384,7 +384,7 @@ function montarPDF(s){
   doc.setFontSize(9); doc.setTextColor(60);
   doc.text('Assinatura do recebedor',L,y+5); doc.text('Assinatura do responsável pelo pagamento',L+95,y+5);
   doc.setTextColor(110); doc.setFontSize(8.5);
-  doc.text(s.nome,L,y+9.5); if(s.resp) doc.text(s.resp,L+95,y+9.5);
+  doc.text(s.nome,L,y+9.5); doc.text(s.resp,L+95,y+9.5);
   doc.setTextColor(0);
   return doc;
 }
@@ -396,9 +396,11 @@ function validar(s){
   if(!cpfValido(s.cpf)){ erros.push('um CPF válido'); $('cpf').setAttribute('aria-invalid','true'); }
   if(!(s.total>0)) erros.push('o valor de pelo menos um dia');
   if(s.pg==='Outra' && !s.outra) erros.push('qual é a outra forma de pagamento');
+  if(!s.resp){ erros.push('o responsável pelo pagamento'); $('resp').setAttribute('aria-invalid','true'); }
   return erros;
 }
 $('nome').addEventListener('input',e=>e.target.removeAttribute('aria-invalid'));
+$('resp').addEventListener('input',e=>e.target.removeAttribute('aria-invalid'));
 
 let downloadsP = window.claude && window.claude.use ? window.claude.use('downloads') : Promise.resolve(undefined);
 $('gerar').addEventListener('click',async()=>{
