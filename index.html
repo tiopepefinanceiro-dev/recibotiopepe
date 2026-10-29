@@ -426,10 +426,19 @@ $('gerar').addEventListener('click',async()=>{
 });
 
 const emClaude = !!(window.claude && window.claude.use);
-if(emClaude) $('imprimir').hidden = true; // a página do Claude não permite abrir a impressão
-$('imprimir').addEventListener('click',()=>{
+$('imprimir').addEventListener('click',async()=>{
   const s=state(); const erros=validar(s);
   if(erros.length){ msg('Falta preencher: '+erros.join(', ')+'.','err'); return; }
+  if(emClaude){ // dentro do Claude a janela de impressão é bloqueada: salva o PDF para imprimir
+    const dl=await downloadsP;
+    if(!dl){ msg('Para imprimir, use o site do recibo no GitHub.','err'); return; }
+    try{ const doc=montarPDF(s); doc.autoPrint();
+      const slug=s.nome.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_|_$/g,'').toLowerCase();
+      await dl.save({filename:`recibo_${slug||'prestador'}_${s.data||hoje()}.pdf`,data:doc.output('blob')});
+      msg('PDF salvo. Abra o arquivo: a impressão abre automaticamente.','ok');
+    }catch(e){ msg(e&&e.code==='declined'?'Download cancelado.':'Não foi possível salvar o PDF agora.','err'); }
+    return;
+  }
   if(!window.jspdf){ msg('O gerador de PDF não carregou. Verifique a internet e recarregue a página.','err'); return; }
   try{
     const doc=montarPDF(s); doc.autoPrint();
