@@ -96,12 +96,12 @@ input[aria-invalid="true"]{border-color:var(--err)}
 .pay label:has(input:checked){border-color:var(--sec);background:var(--sec);color:var(--sec-ink)}
 
 /* 30 — painel de resumo, 10 — botão principal */
-aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid;gap:14px;background:var(--sec);color:var(--sec-ink);border-radius:14px;padding:22px}
+aside{min-width:0;grid-template-columns:minmax(0,1fr);position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid;gap:14px;background:var(--sec);color:var(--sec-ink);border-radius:14px;padding:22px}
 aside .lbl{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sec-muted)}
 .total{font-family:var(--display);font-size:2.2rem;line-height:1;font-variant-numeric:tabular-nums}
 .ext{color:var(--sec-muted);font-size:.9rem;margin-top:6px}
 dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;font-size:.88rem;border-top:1px solid var(--sec-2);padding-top:14px}
-dt{color:var(--sec-muted)}dd{margin:0;text-align:right;overflow-wrap:anywhere}
+dt{color:var(--sec-muted)}dd{margin:0;text-align:right;overflow-wrap:anywhere;min-width:0}
 .btn{font:inherit;font-weight:700;font-size:1rem;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:14px 16px;cursor:pointer;box-shadow:0 6px 18px -8px var(--accent)}
 .btn:hover{filter:brightness(1.08)}
 .btn:disabled{opacity:.6;cursor:wait}
@@ -111,7 +111,7 @@ dt{color:var(--sec-muted)}dd{margin:0;text-align:right;overflow-wrap:anywhere}
 .ghost{margin-top:2px}
 .ghost{font:inherit;font-size:.88rem;background:transparent;color:var(--sec-ink);border:1px solid var(--sec-2);border-radius:10px;padding:10px;cursor:pointer}
 .ghost:hover{background:var(--sec-2)}
-.msg{font-size:.88rem;min-height:1.3em;margin:0;color:var(--sec-muted)}
+.msg{font-size:.84rem;line-height:1.4;min-height:1.3em;margin:0;overflow-wrap:anywhere;color:var(--sec-muted)}
 .msg.ok{color:#8fe0b2}.msg.err{color:#ffb3ad}
 .confirm{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.88rem}
 .confirm button{font:inherit;font-size:.85rem;border-radius:8px;padding:6px 12px;cursor:pointer;border:1px solid var(--sec-2);background:var(--sec-2);color:var(--sec-ink)}
@@ -571,7 +571,7 @@ $('gerar').addEventListener('click',async()=>{
     const slug=s.nome.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_|_$/g,'').toLowerCase();
     const filename=`recibo_${s.tipo==='outro'?'outro':s.tipo}_${slug||'recebedor'}_${(s.data||hoje())}.pdf`;
     const dl=await downloadsP;
-    if(dl===undefined){ doc.save(filename); msg('PDF gerado: '+filename,'ok'); }
+    if(dl===undefined){ doc.save(filename); msg('PDF gerado ✓ '+filename,'ok'); }
     else if(dl===null){ msg('Esta visualização não permite baixar arquivos. Abra o recibo pelo claude.ai para salvar o PDF.','err'); }
     else{
       await dl.save({filename,data:doc.output('blob')});
