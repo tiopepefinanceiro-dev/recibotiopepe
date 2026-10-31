@@ -507,9 +507,7 @@ function montarPDF(s){
 
   secao('4. DECLARAÇÃO DE RECEBIMENTO');
   const decl=doc.splitTextToSize(T.decl,W);
-  doc.text(decl,L,y); y+=decl.length*5+1;
-  const d2=doc.splitTextToSize('Este recibo comprova exclusivamente o recebimento dos valores nele descritos, não substituindo eventuais obrigações legais, fiscais, previdenciárias ou trabalhistas aplicáveis.',W);
-  doc.text(d2,L,y); y+=d2.length*5+12;
+  doc.text(decl,L,y); y+=decl.length*5+12;
 
   const [yy,mm,dd]=(s.data||hoje()).split('-');
   doc.text(`Recife, ${parseInt(dd,10)} de ${MESES[parseInt(mm,10)-1]} de ${yy}`,L,y);
