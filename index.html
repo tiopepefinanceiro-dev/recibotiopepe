@@ -446,6 +446,12 @@ $('f').addEventListener('submit',e=>e.preventDefault());
 $('add').addEventListener('click',()=>{ const last=getItems().at(-1); addItem({vl:last&&last.v?fmtMoney(last.v):'', sv:last?last.sv:''}); });
 
 /* ---------- PDF ---------- */
+function declTexto(T,s){
+  if(T.key==='bonificacao'||T.key==='gratificacao'){
+    return `Eu, ${s.nome}, declaro para os devidos fins que recebi da empresa Garrido Restaurante Ltda., Tio Pepe Restaurante, CNPJ: 12.045.985/0001-50, a título de bônus por desempenho pelo serviço prestado com excelência, dedicação e comprometimento, conforme avaliação da gestão, a quantia de ${brl(s.total)} (${extenso(s.total)}), não se tratando de verba salarial habitual, mas de natureza eventual, da qual dou total e irrevogável quitação, não incorporável à remuneração mensal, conforme a legislação trabalhista vigente (CLT).`;
+  }
+  return T.decl;
+}
 function montarPDF(s){
   const { jsPDF } = window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
@@ -506,7 +512,7 @@ function montarPDF(s){
   y+=2;
 
   secao('4. DECLARAÇÃO DE RECEBIMENTO');
-  const decl=doc.splitTextToSize(T.decl,W);
+  const decl=doc.splitTextToSize(declTexto(T,s),W);
   doc.text(decl,L,y); y+=decl.length*5+12;
 
   const [yy,mm,dd]=(s.data||hoje()).split('-');
